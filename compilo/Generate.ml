@@ -27,7 +27,6 @@ let rec generate_asm_bin_op = fun varl sp bop il ->
     | BOp (b,bo,b2) -> let ill = (generate_asm_bin_op varl sp b il)|+"pushq %rax" in
                        let ill2 = generate_asm_bin_op varl sp b2 ill in
                       generate_asm_bin_op2  varl sp bo ill2 
-    
     with Match_failure(_) -> raise (Code_gen_failure_expression bop)
   
 
@@ -40,9 +39,10 @@ let rec generate_asm_expression = fun varl sp e il ->
 
 let rec generate_asm_statement ?retlbl = fun varl sp s il ->
   try match s with
-  | CompoundStmt(_,sl) -> (try match sl with 
+  | CompoundStmt(vl,sl) -> (try match sl with 
                           | [] -> il
-                          | x::s -> generate_asm_statement varl sp x il
+                          | x::s -> let il2 = generate_asm_statement varl sp x il in
+                            generate_asm_statement varl sp (CompoundStmt (vl,s)) il2
                           with Match_failure(_) -> raise (Code_gen_failure_statment s)
                           )
   | ReturnStmt None ->

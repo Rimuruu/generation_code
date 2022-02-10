@@ -1,0 +1,12 @@
+{
+  "protocol": "https",
+  "hostname": "moodle.caseine.org",
+  "path": "/webservice/rest/server.php",
+  "personalToken": "a3ff8510c406be4f99039d6b2ae9d890",
+  "vplId": "45974",
+  "useWebsocket": false,
+  "useUnsecureURL": false,
+  "files": [
+    "Generate.ml"
+  ]
+}
