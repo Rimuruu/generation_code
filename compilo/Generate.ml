@@ -138,7 +138,18 @@ let rec generate_asm_statement ?retlbl = fun varl sp s il ->
                             |+ (else_l)^":" in  
                   let il6 =  generate_asm_statement varl sp s2 il5 in   
                   (il6 |+ (fin_l)^":") 
-   |Expr e -> (generate_asm_expression varl sp e il)                        
+   |Expr e -> (generate_asm_expression varl sp e il)     
+   |WhileStmt (e,s) ->  let d_l = fresh_lbl "debut_while" in
+                        let f_l = fresh_lbl "fin_while" in 
+                        let ill = il |+ (d_l)^":" in
+                        let il2 = generate_asm_expression varl sp e ill in 
+                        let il3 = il2 |+ "testq %rax, %rax"
+                            |+ "jz "^f_l in       
+                        let il4 =  generate_asm_statement varl sp s il3 in
+                        let il5 = il4 |+ "jmp "^d_l 
+                            |+ (f_l)^":" in  
+                        il5
+                                  
   | ReturnStmt None ->
      (il
          |+ "addq $"^(string_of_int sp)^", %rsp"

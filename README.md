@@ -76,6 +76,16 @@ fin_while:
         ret
 
 
-movq $5, m1
-movq x, m2
-multq m2, m1
+
+compilation méthode JAVA
+
+bipush 30
+iload_1
+imul
+bipush 20
+iload_2
+imul
+iadd
+bipush 10
+isub
+ireturn

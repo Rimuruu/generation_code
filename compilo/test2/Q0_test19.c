@@ -1,8 +1,8 @@
-
-void fact(){
-}
-
 int main(){
-  fact();
-  return 0;
+    long x;
+    x=0;
+    while(x < 5){
+        x = x + 1;
+    }
+    return x;
 }
