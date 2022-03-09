@@ -4,6 +4,15 @@ open ASMType
 
 type environnement = (string * string) list
 
+let val_to_reg = fun i ->
+  match i with 
+  | 0 -> "%rdi"
+  | 1 -> "%rsi"
+  | 2 -> "%rdx"
+  | 3 -> "%rcx"
+  | 4 -> "%r8"
+  | 5 -> "%r9"
+  | _ -> "null"
 
 let generate_asm_un_op = fun varl sp uop il ->
   match uop with
@@ -41,7 +50,35 @@ let generate_asm_bin_op2 = fun varl sp bop il ->
     with Match_failure(_) -> raise (Code_gen_failure_expression bop)
   *)
 
+
+
 let rec generate_asm_expression = fun varl sp e il ->
+  let rec mov_reg = fun varl sp el il i sp2 -> 
+    match el with 
+    | [] -> (il,sp2)
+    | e::s -> 
+              let sp3 = sp2+8 in 
+              let (il1,sp4) = (mov_reg varl sp s il (i+1) (sp3)) in
+              let il2 = generate_asm_expression varl sp e il1 in 
+              let il4 = il2 |+ "movq %rax, "^(val_to_reg i) in
+              (il4,sp4)
+    in
+  let rec save_reg = fun i il->
+    if i < 6 then let il2 = il |+ "pushq "^(val_to_reg i) in (save_reg (i+1) il2)
+    else il
+  in
+  let rec load_reg = fun i il->
+    if i >= 0 then let il2 = il |+ "popq "^(val_to_reg i) in (load_reg (i-1) il2)
+    else il
+  in
+  let rec rsp_mod = fun sp i il ->
+      if (sp mod 16) == 0 then (il,i)
+      else let il2 = il |+ "pushq %rax" in (rsp_mod (sp+8) (i+1) il2) 
+  in
+  let rec rsp_unmod = fun i il ->
+      if i < 0 then il
+      else let il2 = il |+ "popq %rdx" in (rsp_unmod (i-1) il2) 
+  in
   try match e with
       (* *)
   | IntegerLiteral i -> (il |+ "movq $"^string_of_int i^", %rax" )
@@ -55,7 +92,14 @@ let rec generate_asm_expression = fun varl sp e il ->
   |Set (v,e) ->  let il2 = (generate_asm_expression varl sp e il) in
                  let addr = (List.assoc v varl) in
                 (il2 |+ "movq %rax, "^addr )
+  | Call(fn,exp) -> let ill = save_reg 0 il in
+                    let (il2,sp2) = (mov_reg varl sp exp ill 0 0) in
+                   let il3 = (( il2 |+ ("callq "^fn))) in
+                  (load_reg 5 il3)       
+  | StringLiteral s -> let addr = addr_lbl_of_string s in
+                        (il |+ "leaq "^addr^", %rax")
   with Match_failure(_) -> raise (Code_gen_failure_expression e)
+
 
 
 let rec generate_asm_var = fun vl varl sp ->
@@ -108,12 +152,30 @@ let rec generate_asm_statement ?retlbl = fun varl sp s il ->
      )
   with Match_failure(_) -> raise (Code_gen_failure_statment s)
 
+
+
+let rec generate_asm_param_pile = fun varl al i sp il->
+    match al with 
+    | [] -> (il,varl,sp)
+    | x::s ->  let sp2 = sp+8 in
+                let nvarl = (x,("-"^(string_of_int sp2)^"(%rbp)"))::varl in 
+                          let il2  = il |+ "pushq "^(val_to_reg i) in
+                          (generate_asm_param_pile nvarl s (i+1) sp2 il2)      
+
+
 let generate_asm_top = fun varl il decl ->
   match decl with
-  | FunctionDecl(fn,al,s) -> let ill = il |+ (fn)^":"
+  | FunctionDecl(fn,al,CompoundStmt([],[])) -> 
+                   let ill = il |+ (fn)^":"
                              |+ "pushq %rbp  " 
                              |+ "movq %rsp , %rbp" in
-                              generate_asm_statement varl 0 s ill
+                 (generate_asm_statement varl 0 (ReturnStmt None) ill )                          
+  | FunctionDecl(fn,al,s) ->  
+                              let ill = il |+ (fn)^":"
+                             |+ "pushq %rbp  " 
+                             |+ "movq %rsp , %rbp" in
+                             let (il2,nvarl,sp2) = generate_asm_param_pile varl al 0 0 ill in
+                            (generate_asm_statement nvarl sp2 s il2 )          
   | VarDecl(_) -> il
     (* les variables globals sont déjà geré dans le fichier compilo.ml.
        On ne fait donc rien ici. *)

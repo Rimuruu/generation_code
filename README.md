@@ -74,3 +74,8 @@ fin_while:
         addq $16 rsp
         popq rbp
         ret
+
+
+movq $5, m1
+movq x, m2
+multq m2, m1
