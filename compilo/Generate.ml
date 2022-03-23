@@ -49,8 +49,9 @@ let taille_expr = fun e ->
 
 
 let check_inline = fun s  -> 
-    let f = (getFunDec s) in
-    if (taille_decl f) < 40  then true else false
+    let al,st = (getFunDec s) in
+    let f = FunctionDecl(s,al,st) in
+    if (taille_decl f ) < 40  then true else false
 
 (*let register = ["%rdi";"%rsi";"%rdx";"%rcx";"%r8";"%r9"]*)
 
