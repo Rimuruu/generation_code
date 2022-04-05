@@ -153,3 +153,48 @@ iadd
 bipush 10
 isub
 ireturn
+
+
+Controle Génération de Code 2019-2020
+
+Question 2 
+
+on suppose sp = 0
+
+mcc : 
+    pushq %rbp
+    movq %rsp, %rbp
+    pushq %rdi
+    movq -8(%rbp), %rax
+    pushq %rax
+    movq $100, %rax
+    cmpq %rsp, %rax
+    setg %al 
+    addq $8, %rsp
+    testq %rax, %rax
+    jz else_if 
+    movq -8(%rbp), %rax
+    pushq %rax
+    movq $10, %rax
+    isubq %rsp, %rax
+    addq $8, %rsp
+    addq $8, %rsp
+    popq %rbp
+    retq
+    jmp fin_if
+else_if:
+fin_if:
+    movq %rdi, %rax
+    pushq %rax
+    movq $11, %rax
+    isubq %rsp, %rax
+    pushq %rax
+    popq %rdi
+    call mcc
+    pushq %rax
+    popq %rdi
+    call mcc
+    addq $8, %rsp
+    addq $8, %rsp
+    popq %rbp
+    retq
